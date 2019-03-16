@@ -1,0 +1,40 @@
+#fsorg
+
+root:/home/mx3
+
+Pictures {
+      wallpapers,
+      beautiful_images,
+      perso,
+      memes {
+         anime,
+         gaming,
+         coding,
+         normal
+      },
+},
+Documents {
+  ISOs,
+  work,
+  installers
+},
+Downloads,
+Music,
+graphism,
+MAO {
+  samples,
+  projects {
+     done,
+     wip,
+     important,
+     aborted
+  },
+},
+webdev {
+  proiects,
+  common,
+},
+coding {
+  proiects,
+  common,
+},
