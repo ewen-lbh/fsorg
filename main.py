@@ -125,6 +125,6 @@ if __name__ == '__main__':
     argsgp.add_argument('-q', '--quiet', action='store_true',
                         help='Only shows errors.')
     argsgp.add_argument('--hollywood', action='store_true',
-                        help='Add a random delay (0 to 0.8 seconds) between each folder creation & set verbosity to 1')
+                        help='Make the whole thing look like a NCIS hacking scene.')
 
     main(parser.parse_args())
