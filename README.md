@@ -10,12 +10,12 @@ The text file that describes the folder structure to create is written using thi
     # comment
     root:<path>
     Folder1 {
-        Subfolder1,
+        Subfolder1
         Subfolder2 {
-            Subsubfolder,
-        },
-    },
-    Folder2,
+            Subsubfolder
+        }
+    }
+    Folder2
     Folder3
 
 This will create this hierarchy inside the **\<path\>** folder:
