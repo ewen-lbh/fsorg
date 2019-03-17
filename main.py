@@ -1,6 +1,9 @@
 import os
 import argparse
+import subprocess
+from pyfiglet import figlet_format
 from fsorgfile import FsorgFile
+
 try:
     from termcolor import colored
 except ModuleNotFoundError:
@@ -26,46 +29,61 @@ except ModuleNotFoundError:
         end = '\033[0m'
         return f'{cmap[color]}{msg}{end}'
 
+    def cprint(msg, color):
+        print(colored(msg, color))
 
-def print_tree(path, show_files=False, return_string=False):
-    mainstr = list()
-    for root, dirs, files in os.walk(path):
-        level = root.replace(path, '').count(os.sep)
-        indent = ' ' * 4 * level
-        mainstr.append(f'{indent}{os.path.basename(root)}/')
-        subindent = ' ' * 4 * (level + 1)
-        if show_files:
-            for f in files:
-                mainstr.append(f'{subindent}{f}')
-    if return_string:
-        return '\n'.join(mainstr)
-    else:
-        return mainstr
+FORMAT_HELP = """ fsorg uses a custom-made markup language for describing directory structures.
 
+# This line will be ignored (comment)
+root:/path/to/base/directory
 
-def term_h():
-    try:
-        columns, rows = os.get_terminal_size(0)
-    except OSError:
-        try:
-            columns, rows = os.get_terminal_size(1)
-        except OSError:
-            rows = os.getenv('COLUMNS', '80')
+# if root isn't specified, you will be asked to enter the path.
+# You can also specify this path with the -r option*
+# The root or base directory indicates where all folders should be created.
+# Usually, you would want to set it to ~ (user directory, /home/user-name)
+# * The root declaration in the fsorg file supersede the -r option """  # TODO: this should be inverted
 
-    return int(rows)
+FORMAT_HELP += """Folder_Name {
+    SubFolder_Name {
+        First
+        Another_one
+    }
+    SubFolder2
+}
+Folder_Name2
+
+This will create these folders (for simplification, /path/to/base/directory is replace with 'root':
+
+root/Folder_Name
+root/Folder_Name/SubFolder_Name
+root/Folder_Name/SubFolder_Name/First
+root/Folder_Name/SubFolder_Name/Another_one
+root/Folder_Name/SubFolder2
+root/Folder_Name2
+
+"""
+
 
 
 def main(args):
 
+    if args.format_help:
+        print(FORMAT_HELP)
+
     DEBUG = args.debug
     if DEBUG:
-        FILEPATH = os.path.abspath('~/PycharmProjects/fsorg/fsorg_test.txt')
+        FILEPATH = os.path.abspath('./fsorg_test.txt')
     elif args.file:
-        FILEPATH = os.path.abspath(args.file)
+        if type(args.file) is list:
+            filein = args.file[0]
+        else:
+            filein = args.file
+        FILEPATH = os.path.normpath(os.path.expanduser(filein))
     else:
         FILEPATH = None
 
     isfile = os.path.isfile(FILEPATH)
+    fspath = FILEPATH
 
     while not isfile:
         fspath = input("Path of the organisation file:\n")
@@ -73,64 +91,49 @@ def main(args):
     FILEPATH = fspath
     del fspath
 
-    org_file = FsorgFile(FILEPATH,
-                         display_root=colored('ROOT', color='cyan'),
-                         verbosity=args.verbosity,
-                         dry_run=args.dry_run,
-                         purge=args.purge
-                        )
-    org_file.mkroot()
-    s, e = org_file.walk()
-    if s: print(f'Successfully made {s} directories')
-    if e: print(f'Failed to make {e} directories')
+    fsorg = FsorgFile(FILEPATH,
+                      verbosity=args.verbosity,
+                      dry_run=args.dry_run,
+                      purge=args.purge
+                      )
+    fsorg.mkroot()
+    s, e = fsorg.walk()
+    if not args.quiet:
+        if s: cprint(f'Successfully made {s} director{"ies" if int(s) != 1 else "y"}', 'green')
+        if e: cprint(f'Failed to make {e} director{"ies" if int(e) != 1 else "y"}', 'green')
 
-    print(f'Structure of {org_file.root_dir}:')
-    tree = print_tree(org_file.root_dir)
-    if len(tree) > term_h():
-        if input('This will fill the entire screen. Show ? [yn]\n').startswith('y'):
-            print(tree)
-    else:
-        print(tree)
+        if input(f'Show the structure of  {fsorg.root_dir} ?\n>').lower().strip().startswith('y'):
+            subprocess.call(['tree', '-d', f'{fsorg.root_dir}'])
+
+        print(f"""Thanks for using \n{figlet_format('fsorg')}\nSee you on <https://github.com/ewen-lbh> ! :D""")
 
 
 if __name__ == '__main__':
-    def print_textfile_h(**_): print("""fsorg text file format:
-
-        [root:<root_path>]
-        Folder {
-            Subfolder,
-            Subfolder
-        },
-        Folder
-
-    Where Folder and Subfolder are folder names
-    """)
-
-    parser = argparse.ArgumentParser(description='Makes directories from a fsorg text file',
-                                   )
+    parser = argparse.ArgumentParser(description='Makes directories from a fsorg text file')
 
     parser.add_argument('file', metavar='PATH', type=str, nargs=1,
                         help='Path to the fsorg text file')
 
     parser.add_argument('-r', '--root', metavar='PATH',
-                       help='Use this if you haven\'t declared a root path in your fsorg file')
+                        help='Use this if you haven\'t declared a root path in your fsorg file')
 
     parser.add_argument('-v', '--verbosity', metavar='LEVEL', type=int,
                         help='Set verbosity level (0-3). Higher values fall back to 3.')
 
-    # parser.add_argument('-H', '--fsorg-files-help', help='Show help about the format used by fsorg files.', action=print_textfile_h)
+    parser.add_argument('-H', '--format-help', help='Show help about the format used by fsorg files.', action='store_true')
 
-    group = parser.add_mutually_exclusive_group()
+    parser.add_argument('-d', '--dry-run', action='store_true',
+                        help="Don't make directories, but show path that would be created")
 
-    group.add_argument('-d', '--dry-run',  action='store_true',
-                       help="Don't make directories, but show path that would be created")
+    parser.add_argument('-p', '--purge', action='store_true',
+                        help='Remove all files and folders from inside the root directory')
 
-    group.add_argument('-D', '--debug', action='store_true',
+    argsgp = parser.add_mutually_exclusive_group()
+
+    argsgp.add_argument('-D', '--debug', action='store_true',
                         help='Turns on debug mode. With this option, FILE is ignored, and the fsorg path is equal to ./fsorg_test.txt Verbosity level is also set to 3')
 
-    group.add_argument('-q', '--quiet',  action='store_true',
-                       help='Only shows errors.')
-    group.add_argument('-p', '--purge', action='store_true',
-                       help='Remove all files and folders from inside the root directory')
+    argsgp.add_argument('-q', '--quiet', action='store_true',
+                        help='Only shows errors.')
 
     main(parser.parse_args())

@@ -1,0 +1,25 @@
+# a comment
+
+root:/home/mx3/test
+
+Folder {
+    Subfolder
+    Subfolder2 {
+        Subsubfolder
+    }
+    Subfolder3
+}
+
+Folder2
+
+The_Great_Folder {
+    Folder {
+        Folder {
+            Folder {
+                Folder {
+
+                }
+            }
+        }
+    }
+}

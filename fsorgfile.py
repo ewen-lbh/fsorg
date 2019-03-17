@@ -1,6 +1,8 @@
 import os
 import re
 
+import rm
+
 try:
     from termcolor import cprint
 except ModuleNotFoundError:
@@ -31,9 +33,6 @@ class FsorgFile:
     def __init__(self, filepath, **kwargs):
         self.purge_root = kwargs.get('purge', False)
         self.dry_run = kwargs.get('dry_run', False)
-        self.display_opts = {
-            "root": kwargs.get('display_root', '[ROOT]')
-        }
         self.debug_level = kwargs.get('verbosity', 0)
         if self.debug_level is None:
             self.debug_level = 0
@@ -43,6 +42,7 @@ class FsorgFile:
         self.lines = self._no_coms(self.raw_lines)
         self.root_dir = self._root()
         if not self.root_dir: self.root_dir = input("Root directory's path: ")
+        self.raw_tokens = self._tokenize()
         self.tokens = self._clean_tokens()
 
         if self.debug_level >= 2:
@@ -61,6 +61,9 @@ class FsorgFile:
             for token in self.tokens:
                 print(f'     {token}')
             print('')
+
+        if self.dry_run:
+            print("--- DRY RUN ---\n")
 
     def _raw(self):
         with open(self.filepath, 'r') as f:
@@ -106,7 +109,7 @@ class FsorgFile:
                     for i in os.listdir(self.root_dir):
                         abspath = os.path.join(self.root_dir, i)
                         # subprocess.call(f'rm -rf {abspath}')
-                        cprint('lol', 'red')
+                        rm.rm(abspath)
                     cprint('Done.', 'green')
 
     def _real_lines(self):
@@ -116,16 +119,16 @@ class FsorgFile:
     def _tokenize(self):
         def _string(string):
             tk = ''
-            if string[0] in ('{', '}', ','):
+            if string[0] in ('{', '}', ',', '\n'):
                 return None, string
             for c in string:
-                if c not in ('{', '}', ','):
+                if c not in ('{', '}', ',', '\n'):
                     tk += c
                 else:
                     return tk.strip(), string[len(tk):]
 
         tokens = []
-        string = '\n'.join(self._real_lines())
+        string = '\n'.join(self._real_lines())+'\n'  # final '\n' needed, else _string breaks and returns None
         while len(string):
             folder, string = _string(string)
             if folder is not None:
@@ -134,11 +137,11 @@ class FsorgFile:
 
             c = string[0]
 
-            if c in ('}', '{', ','):
+            if c in ('}', '{', ',', '\n'):
                 tokens.append(c)
                 string = string[1:]
 
-            elif c in (' ', '\n'):
+            elif c in (' ', ''):
                 string = string[1:]
 
             else:
@@ -147,7 +150,7 @@ class FsorgFile:
         return tokens
 
     def _clean_tokens(self):
-        return [tok for tok in self._tokenize() if tok not in ('', ' ', ',')]
+        return [tok for tok in self.raw_tokens if tok not in ('', ' ', ',', '\n')]
 
     def walk(self):
         def isfolder(string):
@@ -167,13 +170,10 @@ class FsorgFile:
                 else:
                     last_path = goback(last_path) + '/' + token
 
-                display_path = last_path.replace(self.root_dir, self.display_opts["root"], 1)
+                display_path = last_path.replace(self.root_dir+'/', '', 1)
 
-                if self.debug_level:
-                    print(f'Making directory:\n{display_path}')
-
-                elif self.dry_run:
-                    print(f'Would make directory:\n{display_path}')
+                if self.debug_level or self.dry_run:
+                    print(f'{display_path}')
 
                 if not os.path.isdir(last_path) and not os.path.isfile(last_path):
                     if not self.dry_run:
@@ -184,7 +184,7 @@ class FsorgFile:
                         cprint('E: Directory already exists', 'red')
                     errcount += 1
 
-                if self.debug_level or self.dry_run:
+                if self.debug_level >= 3:
                     print('')
             elif token == '{':
                 last_path += '/'
