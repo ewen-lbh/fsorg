@@ -79,9 +79,16 @@ def main(args):
                       )
     fsorg.mkroot()
     s, e = fsorg.walk()
+
+    if args.hollywood:
+        if randint(0,1):
+            cprint("Alright, I've hacked their mainframe and disabled their algorithms.", hackerman=True, color='red')
+        else:
+            cprint("I'm in.", hackerman=True, color='red')
+
     if not args.quiet:
-        if s: cprint(f'Successfully made {s} director{"ies" if int(s) != 1 else "y"}', 'green')
-        if e: cprint(f'Failed to make {e} director{"ies" if int(e) != 1 else "y"}', 'red')
+        if s: cprint(f'Successfully made {s} director{"ies" if int(s) != 1 else "y"}', 'green', hackerman=args.hollywood)
+        if e: cprint(f'Failed to make {e} director{"ies" if int(e) != 1 else "y"}', 'red', hackerman=args.hollywood)
 
         if input(f'Show the structure of  {fsorg.root_dir} ?\n>').lower().strip().startswith('y'):
             subprocess.call(['tree', '-d', f'{fsorg.root_dir}'])

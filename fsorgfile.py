@@ -7,8 +7,8 @@ from random import randint
 import rm
 
 
-def colored(msg, color):
-    cmap = {
+def ansicolors(color='reset'):
+    return {
         'black': '\033[30m',
         'dark red': '\033[31m',
         'dark green': '\033[32m',
@@ -25,22 +25,31 @@ def colored(msg, color):
         'magenta': '\033[95m',
         'cyan': '\033[96m',
         'white': '\033[97m',
-    }
-    end = '\033[0m'
-    return f'{cmap[color]}{msg}{end}'
+    }.get(color, '\033[0m')
 
 
-def cprint(msg, color):
-    print(colored(msg, color))
+def colored(msg, color):
+    pre = ansicolors(color)
+    end = ansicolors('reset')
+    return f'{pre}{msg}{end}'
 
 
-def typewriter(msg, speed=0.03):
+def typewriter(msg, slowness=0.03, ending_newline=True):
     for i, c in enumerate(list(msg)):
         print(c, end='')
         sys.stdout.flush()
-        time.sleep(speed)
+        time.sleep(slowness)
+    if ending_newline:
+        print('')  # adds back the newline
 
-    print('')  # adds back the newline
+
+def cprint(msg, color='reset', hackerman=False, end='\n'):
+    if not hackerman:
+        print(colored(msg, color), end=end)
+    else:
+        print(ansicolors(color), end='')
+        typewriter(msg, ending_newline=False)
+        print(ansicolors(), end=end)
 
 
 class FsorgFile:
@@ -62,7 +71,7 @@ class FsorgFile:
         self.tokens = self._clean_tokens()
 
         if self.debug_level >= 2:
-            print(f"FsorgFile filepath set to: \n{self.filepath}")
+            cprint(f"FsorgFile filepath set to: \n{self.filepath}", hackerman=self.hollywood)
 
         if self.debug_level >= 3:
             print("Contents of file (stripped, comments removed):")
@@ -70,7 +79,7 @@ class FsorgFile:
                 print(f'     {line}')
 
         if self.debug_level >= 1:
-            print(f"Found root directory declaration: {self.root_dir}")
+            cprint(f"Found root directory declaration: {self.root_dir}", hackerman=self.hollywood)
 
         if self.debug_level >= 2:
             print(f"Tokens:")
@@ -79,10 +88,10 @@ class FsorgFile:
             print('')
 
         if self.dry_run:
-            cprint("--- DRY RUN ---\n", "yellow")
+            cprint("--- DRY RUN ---\n", "yellow", hackerman=self.hollywood)
 
         if self.hollywood:
-            typewriter(colored("> start counterstrike", "green"), speed=0.1)
+            typewriter(colored("> start counterstrike", "green"), slowness=0.1)
 
     def _raw(self):
         with open(self.filepath, 'r') as f:
@@ -104,29 +113,26 @@ class FsorgFile:
             if root.endswith('/'): root = root[:-1]
             return root
         except UnboundLocalError:
-            print(f"""W: No root declaration found in {self.filepath}
-   You can add one using this syntax:
-   root:<path>
-   """)
+            cprint(f"W: No root declaration found in {self.filepath}", 'yellow', hackerman=self.hollywood)
+            cprint(f"\tYou can add one using this syntax:\n\troot:<path>", hackerman=self.hollywood)
             return False
 
     def mkroot(self):
         if not os.path.isdir(self.root_dir):
-            print(f'Creating root directory {self.root_dir}...', end='')
+            cprint(f"Root directory doesn't exist.", 'yellow', hackerman=self.hollywood)
+            cprint(f'Creating root directory {self.root_dir}...', end='', hackerman=self.hollywood)
             os.mkdir(self.root_dir)
             cprint('Done.', 'green')
         else:
             if self.debug_level >= 1:
-                cprint(f'Directory {self.root_dir} already exists', 'yellow')
+                cprint(f'Directory {self.root_dir} already exists', 'yellow', hackerman=self.hollywood)
 
             init_root_sz = len(os.listdir(self.root_dir))
             if init_root_sz > 0:
-                cprint(f'W: Directory "{self.root_dir} contains {init_root_sz} files or directories !', 'yellow')
+                cprint(f'W: Directory "{self.root_dir} contains {init_root_sz} files or directories !', 'yellow', hackerman=self.hollywood)
 
                 if self.purge_root:
-                    if self.hollywood:
-                        typewriter('Destroying mainframe database via SQL breach')
-                    print('W: Purging root directory...', end='')
+                    cprint('W: Purging root directory...', hackerman=self.hollywood, end='')
                     for i in os.listdir(self.root_dir):
                         abspath = os.path.join(self.root_dir, i)
                         # subprocess.call(f'rm -rf {abspath}')
@@ -181,7 +187,7 @@ class FsorgFile:
             newpath = re.sub(r'([^/]+)/([\w_]+)/?$', r'\1', path)
             return newpath
 
-        if not self.quiet: print(f"Using {colored(self.root_dir, 'cyan')} as the base/root directory")
+        if not self.quiet: cprint(f"Using {colored(self.root_dir, 'cyan')} as the base/root directory", hackerman=self.hollywood)
         last_path = self.root_dir + '/'
         successcount = 0
         errcount = 0
@@ -215,6 +221,6 @@ class FsorgFile:
                 last_path = goback(last_path)
 
             if self.hollywood:
-                time.sleep(randint(0, 8) * 0.1)
+                time.sleep(0.1)
 
         return successcount, errcount
