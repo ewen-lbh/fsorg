@@ -2,48 +2,22 @@ import os
 import argparse
 import subprocess
 from pyfiglet import figlet_format
-from fsorgfile import FsorgFile
+from fsorgfile import *
 
-try:
-    from termcolor import colored
-except ModuleNotFoundError:
-    def colored(msg, color):
-        cmap = {
-            'black': '\033[30m',
-            'dark red': '\033[31m',
-            'dark green': '\033[32m',
-            'dark yellow': '\033[33m',
-            'dark blue': '\033[34m',
-            'dark magenta': '\033[35m',
-            'dark cyan': '\033[36m',
-            'grey': '\033[37m',
-            'dark grey': '\033[90m',
-            'red': '\033[91m',
-            'green': '\033[92m',
-            'yellow': '\033[93m',
-            'blue': '\033[94m',
-            'magenta': '\033[95m',
-            'cyan': '\033[96m',
-            'white': '\033[97m',
-        }
-        end = '\033[0m'
-        return f'{cmap[color]}{msg}{end}'
+FORMAT_HELP = f"""fsorg uses a custom-made markup language for describing directory structures.
 
-    def cprint(msg, color):
-        print(colored(msg, color))
+{colored('# This line will be ignored (comment)', 'grey')}
+root:/path/to/base/directory"""
 
-FORMAT_HELP = """ fsorg uses a custom-made markup language for describing directory structures.
-
-# This line will be ignored (comment)
-root:/path/to/base/directory
-
+FORMAT_HELP += colored("""
 # if root isn't specified, you will be asked to enter the path.
 # You can also specify this path with the -r option*
 # The root or base directory indicates where all folders should be created.
 # Usually, you would want to set it to ~ (user directory, /home/user-name)
-# * The root declaration in the fsorg file supersede the -r option """  # TODO: this should be inverted
+# * The root declaration in the fsorg file supersede the -r option """, 'grey')  # TODO: this should be inverted
 
-FORMAT_HELP += """Folder_Name {
+FORMAT_HELP += """
+Folder_Name {
     SubFolder_Name {
         First
         Another_one
@@ -67,12 +41,14 @@ root/Folder_Name2
 
 def main(args):
 
+
     if args.format_help:
         print(FORMAT_HELP)
+        return None
 
     DEBUG = args.debug
-    if DEBUG:
-        FILEPATH = os.path.abspath('./fsorg_test.txt')
+    if DEBUG or not args.file:
+        FILEPATH = os.path.join(os.getcwd(), 'fsorg.txt')
     elif args.file:
         if type(args.file) is list:
             filein = args.file[0]
@@ -86,21 +62,26 @@ def main(args):
     fspath = FILEPATH
 
     while not isfile:
-        fspath = input("Path of the organisation file:\n")
+        fspath = input("Path of the fsorg file:\n")
         isfile = os.path.isfile(fspath)
     FILEPATH = fspath
     del fspath
 
+    verbose_lv = args.verbosity if not DEBUG else 3
+    verbose_lv = 1 if args.hollywood else verbose_lv
+
     fsorg = FsorgFile(FILEPATH,
-                      verbosity=args.verbosity,
+                      verbosity=verbose_lv,
                       dry_run=args.dry_run,
-                      purge=args.purge
+                      purge=args.purge,
+                      quiet=args.quiet,
+                      hollywood=args.hollywood,
                       )
     fsorg.mkroot()
     s, e = fsorg.walk()
     if not args.quiet:
         if s: cprint(f'Successfully made {s} director{"ies" if int(s) != 1 else "y"}', 'green')
-        if e: cprint(f'Failed to make {e} director{"ies" if int(e) != 1 else "y"}', 'green')
+        if e: cprint(f'Failed to make {e} director{"ies" if int(e) != 1 else "y"}', 'red')
 
         if input(f'Show the structure of  {fsorg.root_dir} ?\n>').lower().strip().startswith('y'):
             subprocess.call(['tree', '-d', f'{fsorg.root_dir}'])
@@ -111,8 +92,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Makes directories from a fsorg text file')
 
-    parser.add_argument('file', metavar='PATH', type=str, nargs=1,
-                        help='Path to the fsorg text file')
+    parser.add_argument('file', metavar='PATH', type=str, nargs='?',
+                        help='Path to the fsorg text file. Defaults to "fsorg.txt" in current working directory.')
 
     parser.add_argument('-r', '--root', metavar='PATH',
                         help='Use this if you haven\'t declared a root path in your fsorg file')
@@ -120,7 +101,8 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbosity', metavar='LEVEL', type=int,
                         help='Set verbosity level (0-3). Higher values fall back to 3.')
 
-    parser.add_argument('-H', '--format-help', help='Show help about the format used by fsorg files.', action='store_true')
+    parser.add_argument('-H', '--format-help', action='store_true',
+                        help='Show help about the format used by fsorg files.')
 
     parser.add_argument('-d', '--dry-run', action='store_true',
                         help="Don't make directories, but show path that would be created")
@@ -128,12 +110,14 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--purge', action='store_true',
                         help='Remove all files and folders from inside the root directory')
 
-    argsgp = parser.add_mutually_exclusive_group()
+    parser.add_argument('-D', '--debug', action='store_true',
+                        help='Set verbosity to 3 and use the FILE\'s default value')
 
-    argsgp.add_argument('-D', '--debug', action='store_true',
-                        help='Turns on debug mode. With this option, FILE is ignored, and the fsorg path is equal to ./fsorg_test.txt Verbosity level is also set to 3')
+    argsgp = parser.add_mutually_exclusive_group()
 
     argsgp.add_argument('-q', '--quiet', action='store_true',
                         help='Only shows errors.')
+    argsgp.add_argument('--hollywood', action='store_true',
+                        help='Add a random delay (0 to 0.8 seconds) between each folder creation & set verbosity to 1')
 
     main(parser.parse_args())

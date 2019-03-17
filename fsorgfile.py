@@ -1,38 +1,54 @@
 import os
 import re
+import sys
+import time
+from random import randint
 
 import rm
 
-try:
-    from termcolor import cprint
-except ModuleNotFoundError:
-    def cprint(msg, color):
-        cmap = {
-            'black': '\033[30m',
-            'dark red': '\033[31m',
-            'dark green': '\033[32m',
-            'dark yellow': '\033[33m',
-            'dark blue': '\033[34m',
-            'dark magenta': '\033[35m',
-            'dark cyan': '\033[36m',
-            'grey': '\033[37m',
-            'dark grey': '\033[90m',
-            'red': '\033[91m',
-            'green': '\033[92m',
-            'yellow': '\033[93m',
-            'blue': '\033[94m',
-            'magenta': '\033[95m',
-            'cyan': '\033[96m',
-            'white': '\033[97m',
-        }
-        end = '\033[0m'
-        print(f'{cmap[color]}{msg}{end}')
+
+def colored(msg, color):
+    cmap = {
+        'black': '\033[30m',
+        'dark red': '\033[31m',
+        'dark green': '\033[32m',
+        'dark yellow': '\033[33m',
+        'dark blue': '\033[34m',
+        'dark magenta': '\033[35m',
+        'dark cyan': '\033[36m',
+        'grey': '\033[37m',
+        'dark grey': '\033[90m',
+        'red': '\033[91m',
+        'green': '\033[92m',
+        'yellow': '\033[93m',
+        'blue': '\033[94m',
+        'magenta': '\033[95m',
+        'cyan': '\033[96m',
+        'white': '\033[97m',
+    }
+    end = '\033[0m'
+    return f'{cmap[color]}{msg}{end}'
+
+
+def cprint(msg, color):
+    print(colored(msg, color))
+
+
+def typewriter(msg, speed=0.03):
+    for i, c in enumerate(list(msg)):
+        print(c, end='')
+        sys.stdout.flush()
+        time.sleep(speed)
+
+    print('')  # adds back the newline
 
 
 class FsorgFile:
     def __init__(self, filepath, **kwargs):
         self.purge_root = kwargs.get('purge', False)
         self.dry_run = kwargs.get('dry_run', False)
+        self.quiet = kwargs.get('quiet', False)
+        self.hollywood = kwargs.get('hollywood', False)
         self.debug_level = kwargs.get('verbosity', 0)
         if self.debug_level is None:
             self.debug_level = 0
@@ -63,7 +79,10 @@ class FsorgFile:
             print('')
 
         if self.dry_run:
-            print("--- DRY RUN ---\n")
+            cprint("--- DRY RUN ---\n", "yellow")
+
+        if self.hollywood:
+            typewriter(colored("> start counterstrike", "green"), speed=0.1)
 
     def _raw(self):
         with open(self.filepath, 'r') as f:
@@ -105,6 +124,8 @@ class FsorgFile:
                 cprint(f'W: Directory "{self.root_dir} contains {init_root_sz} files or directories !', 'yellow')
 
                 if self.purge_root:
+                    if self.hollywood:
+                        typewriter('Destroying mainframe database via SQL breach')
                     print('W: Purging root directory...', end='')
                     for i in os.listdir(self.root_dir):
                         abspath = os.path.join(self.root_dir, i)
@@ -128,7 +149,7 @@ class FsorgFile:
                     return tk.strip(), string[len(tk):]
 
         tokens = []
-        string = '\n'.join(self._real_lines())+'\n'  # final '\n' needed, else _string breaks and returns None
+        string = '\n'.join(self._real_lines()) + '\n'  # final '\n' needed, else _string breaks at the last iteration
         while len(string):
             folder, string = _string(string)
             if folder is not None:
@@ -160,6 +181,7 @@ class FsorgFile:
             newpath = re.sub(r'([^/]+)/([\w_]+)/?$', r'\1', path)
             return newpath
 
+        if not self.quiet: print(f"Using {colored(self.root_dir, 'cyan')} as the base/root directory")
         last_path = self.root_dir + '/'
         successcount = 0
         errcount = 0
@@ -170,10 +192,11 @@ class FsorgFile:
                 else:
                     last_path = goback(last_path) + '/' + token
 
-                display_path = last_path.replace(self.root_dir+'/', '', 1)
+                display_path = './' + last_path.replace(self.root_dir + '/', '', 1)
 
                 if self.debug_level or self.dry_run:
-                    print(f'{display_path}')
+                    if not self.quiet:
+                        print(f'{colored("mkdir", "dark grey")} {display_path.replace("/", colored("/", "cyan"))}')
 
                 if not os.path.isdir(last_path) and not os.path.isfile(last_path):
                     if not self.dry_run:
@@ -190,5 +213,8 @@ class FsorgFile:
                 last_path += '/'
             elif token == '}':
                 last_path = goback(last_path)
+
+            if self.hollywood:
+                time.sleep(randint(0, 8) * 0.1)
 
         return successcount, errcount
