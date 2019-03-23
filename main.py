@@ -23,17 +23,22 @@ Folder_Name {
         Another_one
     }
     SubFolder2
+    <CompanyName>
 }
 Folder_Name2
 
-This will create these folders (for simplification, /path/to/base/directory is replace with 'root':
+This will ask you to assign a value to <CompanyName>
+If you respond "Mx3", these folders will be created:
 
 root/Folder_Name
 root/Folder_Name/SubFolder_Name
 root/Folder_Name/SubFolder_Name/First
 root/Folder_Name/SubFolder_Name/Another_one
 root/Folder_Name/SubFolder2
+root/Folder_Name/Mx3
 root/Folder_Name2
+
+(for simplification, /path/to/base/directory is replace with 'root')
 
 """
 
@@ -41,6 +46,11 @@ root/Folder_Name2
 
 def main(args):
 
+
+    # Adds .fsorg to the end of the fsorg file path if no file extension is specified
+    def auto_add_ext(fspath):
+        if not re.match(r'\w+\.\w+$', fspath): fspath += '.fsorg'
+        return fspath
 
     if args.format_help:
         print(FORMAT_HELP)
@@ -55,6 +65,7 @@ def main(args):
         else:
             filein = args.file
         FILEPATH = os.path.normpath(os.path.expanduser(filein))
+        FILEPATH = auto_add_ext(FILEPATH)
     else:
         FILEPATH = None
 
@@ -63,6 +74,7 @@ def main(args):
 
     while not isfile:
         fspath = input("Path of the fsorg file:\n")
+        fspath = auto_add_ext(fspath)
         isfile = os.path.isfile(fspath)
     FILEPATH = fspath
     del fspath
@@ -90,8 +102,15 @@ def main(args):
         if s: cprint(f'Successfully made {s} director{"ies" if int(s) != 1 else "y"}', 'green', hackerman=args.hollywood)
         if e: cprint(f'Failed to make {e} director{"ies" if int(e) != 1 else "y"}', 'red', hackerman=args.hollywood)
 
-        if input(f'Show the structure of  {fsorg.root_dir} ?\n>').lower().strip().startswith('y'):
-            subprocess.call(['tree', '-d', f'{fsorg.root_dir}'])
+        # no need to show tree if the folders aren't created
+        if not args.dry_run:
+            if input(f'Show the structure of  {fsorg.root_dir} ?\n>').lower().strip().startswith('y'):
+                cmd = ['tree', f'"{fsorg.root_dir}"']
+                # if we're on UNIX platforms, we need to add the -d flag to only list directories
+                if sys.platform != 'win32': cmd.insert(1, '-d')
+                if verbose_lv >= 2:
+                    print(f"Executing command {''.join(cmd)}")
+                subprocess.call(cmd)
 
         print(f"""Thanks for using \n{figlet_format('fsorg')}\nSee you on <https://github.com/ewen-lbh> ! :D""")
 
