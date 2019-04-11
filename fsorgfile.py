@@ -6,6 +6,7 @@ from random import randint
 
 import rm
 
+FOLDER_ILLEGAL_CHARS_SUBSTITUTE = '_'
 
 def ansicolors(color='reset'):
     return {
@@ -234,6 +235,10 @@ class FsorgFile:
 
         return tokens
 
+    @staticmethod
+    def sanitize_foldername(foldername):
+        return re.sub('\W', FOLDER_ILLEGAL_CHARS_SUBSTITUTE, foldername)
+
     def _clean_tokens(self):
         return [tok for tok in self.raw_tokens if tok not in ('', ' ', ',', '\n')]
 
@@ -252,6 +257,7 @@ class FsorgFile:
         errcount = 0
         for token in self.tokens:
             if isfolder(token):
+                token = self.sanitize_foldername(token)
                 if last_path.endswith('/'):
                     last_path += token
                 else:

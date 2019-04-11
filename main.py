@@ -1,6 +1,5 @@
-import os
 import argparse
-import subprocess
+import webbrowser
 from pyfiglet import figlet_format
 from fsorgfile import *
 
@@ -46,7 +45,6 @@ root/Folder_Name2
 
 def main(args):
 
-
     # Adds .fsorg to the end of the fsorg file path if no file extension is specified
     def auto_add_ext(fspath):
         if not re.match(r'\w+\.\w+$', fspath): fspath += '.fsorg'
@@ -79,8 +77,14 @@ def main(args):
     FILEPATH = fspath
     del fspath
 
-    verbose_lv = args.verbosity if not DEBUG else 3
-    verbose_lv = 1 if args.hollywood else verbose_lv
+    if DEBUG:
+        verbose_lv = 3
+    elif args.hollywood:
+        verbose_lv = 1
+    elif args.verbosity is not None:
+        verbose_lv = args.verbosity
+    else:
+        verbose_lv = 0
 
     fsorg = FsorgFile(FILEPATH,
                       verbosity=verbose_lv,
@@ -93,7 +97,7 @@ def main(args):
     s, e = fsorg.walk()
 
     if args.hollywood:
-        if randint(0,1):
+        if randint(0, 1):
             cprint("Alright, I've hacked their mainframe and disabled their algorithms.", hackerman=True, color='red')
         else:
             cprint("I'm in.", hackerman=True, color='red')
@@ -104,13 +108,8 @@ def main(args):
 
         # no need to show tree if the folders aren't created
         if not args.dry_run:
-            if input(f'Show the structure of  {fsorg.root_dir} ?\n>').lower().strip().startswith('y'):
-                cmd = ['tree', f'"{fsorg.root_dir}"']
-                # if we're on UNIX platforms, we need to add the -d flag to only list directories
-                if sys.platform != 'win32': cmd.insert(1, '-d')
-                if verbose_lv >= 2:
-                    print(f"Executing command {''.join(cmd)}")
-                subprocess.call(cmd)
+            if input(f'Open {fsorg.root_dir} ?\n>').lower().strip().startswith('y'):
+                webbrowser.open(fsorg.root_dir)
 
         print(f"""Thanks for using \n{figlet_format('fsorg')}\nSee you on <https://github.com/ewen-lbh> ! :D""")
 
