@@ -101,10 +101,11 @@ def main(args):
             if input(f'Show the structure of  {fsorg.root_dir} ?\n>').lower().strip().startswith('y'):
                 cmd = ['tree', f'"{fsorg.root_dir}"']
                 # if we're on UNIX platforms, we need to add the -d flag to only list directories
-                if sys.platform != 'win32': cmd.insert(1, '-d')
+                is_unix = sys.platform != 'win32'
+                cmd = f'tree {"-dn" if is_unix else ""} "{fsorg.root_dir}"'
                 if verbose_lv >= 2:
-                    print(f"Executing command {''.join(cmd)}")
-                subprocess.call(cmd)
+                    print(f"Executing command {cmd}")
+                subprocess.run(cmd, shell=True)
 
         print(f"""Thanks for using \n{figlet_format('fsorg')}\nSee you on <https://github.com/ewen-lbh> ! :D""")
 
