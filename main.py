@@ -92,14 +92,13 @@ def main(args):
         else:
             cprint("I'm in.", hackerman=True, color='red')
 
-    if not args.quiet:
+    if not args.quiet or args.show_tree:
         if s: cprint(f'Successfully made {s} director{"ies" if int(s) != 1 else "y"}', 'green', hackerman=args.hollywood)
         if e: cprint(f'Failed to make {e} director{"ies" if int(e) != 1 else "y"}', 'red', hackerman=args.hollywood)
 
         # no need to show tree if the folders aren't created
         if not args.dry_run:
-            if input(f'Show the structure of  {fsorg.root_dir} ?\n>').lower().strip().startswith('y'):
-                cmd = ['tree', f'"{fsorg.root_dir}"']
+            if args.show_tree or input(f'Show the structure of {fsorg.root_dir} ?\n>').lower().strip().startswith('y'):
                 # if we're on UNIX platforms, we need to add the -d flag to only list directories
                 is_unix = sys.platform != 'win32'
                 cmd = f'tree {"-dn" if is_unix else ""} "{fsorg.root_dir}"'
@@ -127,6 +126,9 @@ if __name__ == '__main__':
 
     parser.add_argument('-d', '--dry-run', action='store_true',
                         help="Don't make directories, but show path that would be created")
+                        
+    parser.add_argument('-t', '--show-tree', action='store_true',
+                        help="Show the tree of the resulting directory structure after creation")
 
     parser.add_argument('-p', '--purge', action='store_true',
                         help='Remove all files and folders from inside the root directory')
