@@ -198,7 +198,7 @@ class FsorgFile:
 
 
     def _real_lines(self):
-        lines = [line for line in self.lines if not re.match(r'^root:', line) and re.match(r'[{}<>,_\w]', line)]
+        lines = [line for line in self.lines if not re.match(r'^root:', line) and re.match(r'[{}<>,_\w-]', line)]
         return lines
 
     def _tokenize(self):
@@ -243,7 +243,7 @@ class FsorgFile:
             return string not in ('{', '}')
 
         def goback(path):
-            newpath = re.sub(r'([^/]+)/([\w_]+)/?$', r'\1', path)
+            newpath = re.sub(r'([^/]+)/([\w_-]+)/?$', r'\1', path)
             return newpath
 
         if not self.quiet: cprint(f"Using {colored(self.root_dir, 'cyan')} as the base/root directory", hackerman=self.hollywood)
