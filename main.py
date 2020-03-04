@@ -47,11 +47,6 @@ root/Folder_Name2
 def main(args):
 
 
-    # Adds .fsorg to the end of the fsorg file path if no file extension is specified
-    def auto_add_ext(fspath):
-        if not re.match(r'\w+\.\w+$', fspath): fspath += '.fsorg'
-        return fspath
-
     if args.format_help:
         print(FORMAT_HELP)
         return None
@@ -65,7 +60,6 @@ def main(args):
         else:
             filein = args.file
         FILEPATH = os.path.normpath(os.path.expanduser(filein))
-        FILEPATH = auto_add_ext(FILEPATH)
     else:
         FILEPATH = None
 
@@ -74,7 +68,6 @@ def main(args):
 
     while not isfile:
         fspath = input("Path of the fsorg file:\n")
-        fspath = auto_add_ext(fspath)
         isfile = os.path.isfile(fspath)
     FILEPATH = fspath
     del fspath
