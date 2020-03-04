@@ -1,0 +1,62 @@
+[[package]]
+category = "main"
+description = "replace '__all__' with '@public.add' decorator"
+name = "public"
+optional = false
+python-versions = "*"
+version = "2019.4.13"
+
+[package.dependencies]
+setuptools = "*"
+
+[[package]]
+category = "main"
+description = "Pure-python FIGlet implementation"
+name = "pyfiglet"
+optional = false
+python-versions = "*"
+version = "0.8.post1"
+
+[[package]]
+category = "main"
+description = "rm(path) function - remove files and directories"
+name = "rm"
+optional = false
+python-versions = "*"
+version = "2019.4.13"
+
+[package.dependencies]
+public = "*"
+setuptools = "*"
+values = "*"
+
+[[package]]
+category = "main"
+description = "values.get(input) - create list from input"
+name = "values"
+optional = false
+python-versions = "*"
+version = "2019.4.13"
+
+[package.dependencies]
+public = "*"
+setuptools = "*"
+
+[metadata]
+content-hash = "1f7cf1f32a27a0e5d0c6dd3003977316034b02f4c7e26435d739e364de424b13"
+python-versions = "^3.7"
+
+[metadata.files]
+public = [
+    {file = "public-2019.4.13.tar.gz", hash = "sha256:e1436a8a99693a9849dfe40b9158f3837b7c309c163b2d3f5b8e9fce23876db1"},
+]
+pyfiglet = [
+    {file = "pyfiglet-0.8.post1-py2.py3-none-any.whl", hash = "sha256:d555bcea17fbeaf70eaefa48bb119352487e629c9b56f30f383e2c62dd67a01c"},
+    {file = "pyfiglet-0.8.post1.tar.gz", hash = "sha256:c6c2321755d09267b438ec7b936825a4910fec696292139e664ca8670e103639"},
+]
+rm = [
+    {file = "rm-2019.4.13.tar.gz", hash = "sha256:5f9a9d8e191917358220edb8e4b49d85f3785955cd260546a1b271aabd650385"},
+]
+values = [
+    {file = "values-2019.4.13.tar.gz", hash = "sha256:8490feebec95cbdb61ee2992355f064371a70ab0a3d9f725a5450987ebf891ad"},
+]
