@@ -1,5 +1,5 @@
-import os
 import argparse
+import webbrowser
 import subprocess
 from pyfiglet import figlet_format
 from fsorgfile import *
@@ -46,7 +46,6 @@ root/Folder_Name2
 
 def main(args):
 
-
     if args.format_help:
         print(FORMAT_HELP)
         return None
@@ -72,9 +71,14 @@ def main(args):
     FILEPATH = fspath
     del fspath
 
-    verbose_lv = args.verbosity if not DEBUG else 3
-    verbose_lv = 1 if args.hollywood else verbose_lv
-    verbose_lv = verbose_lv or 1
+    if DEBUG:
+        verbose_lv = 3
+    elif args.hollywood:
+        verbose_lv = 1
+    elif args.verbosity is not None:
+        verbose_lv = args.verbosity
+    else:
+        verbose_lv = 0
 
     fsorg = FsorgFile(FILEPATH,
                       verbosity=verbose_lv,
@@ -87,7 +91,7 @@ def main(args):
     s, e = fsorg.walk()
 
     if args.hollywood:
-        if randint(0,1):
+        if randint(0, 1):
             cprint("Alright, I've hacked their mainframe and disabled their algorithms.", hackerman=True, color='red')
         else:
             cprint("I'm in.", hackerman=True, color='red')
@@ -98,13 +102,15 @@ def main(args):
 
         # no need to show tree if the folders aren't created
         if not args.dry_run:
+            # if we're on UNIX platforms, we need to add the -d flag to only list directories
+            is_unix = sys.platform != 'win32'
             if args.show_tree or input(f'Show the structure of {fsorg.root_dir} ?\n>').lower().strip().startswith('y'):
-                # if we're on UNIX platforms, we need to add the -d flag to only list directories
-                is_unix = sys.platform != 'win32'
                 cmd = f'tree {"-dn" if is_unix else ""} "{fsorg.root_dir}"'
                 if verbose_lv >= 2:
                     print(f"Executing command {cmd}")
                 subprocess.run(cmd, shell=True)
+            if input(f'Open {fsorg.root_dir} ?\n>').lower().strip().startswith('y'):
+                webbrowser.open(fsorg.root_dir)
 
         print(f"""Thanks for using \n{figlet_format('fsorg')}\nSee you on <https://github.com/ewen-lbh> ! :D""")
 

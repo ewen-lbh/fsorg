@@ -6,6 +6,9 @@ from random import randint
 
 import rm
 
+# Regex class. (without the [])
+LEGAL_FOLDER_CHARS = r'\w_-'
+FOLDER_ILLEGAL_CHARS_SUBSTITUTE = '_'
 
 def ansicolors(color='reset'):
     return {
@@ -198,7 +201,7 @@ class FsorgFile:
 
 
     def _real_lines(self):
-        lines = [line for line in self.lines if not re.match(r'^root:', line) and re.match(r'[{}<>,_\w-]', line)]
+        lines = [line for line in self.lines if not re.match(r'^root:', line) and re.match(rf'[{{}}<>,{LEGAL_FOLDER_CHARS}]', line)]
         return lines
 
     def _tokenize(self):
@@ -234,6 +237,10 @@ class FsorgFile:
 
         return tokens
 
+    @staticmethod
+    def sanitize_foldername(foldername):
+        return re.sub(rf'[^{LEGAL_FOLDER_CHARS}]', FOLDER_ILLEGAL_CHARS_SUBSTITUTE, foldername)
+
     def _clean_tokens(self):
         return [tok for tok in self.raw_tokens if tok not in ('', ' ', ',', '\n')]
 
@@ -243,7 +250,7 @@ class FsorgFile:
             return string not in ('{', '}')
 
         def goback(path):
-            newpath = re.sub(r'([^/]+)/([\w_-]+)/?$', r'\1', path)
+            newpath = re.sub(rf'([^/]+)/([{LEGAL_FOLDER_CHARS}]+)/?$', r'\1', path)
             return newpath
 
         if not self.quiet: cprint(f"Using {colored(self.root_dir, 'cyan')} as the base/root directory", hackerman=self.hollywood)
@@ -252,6 +259,7 @@ class FsorgFile:
         errcount = 0
         for token in self.tokens:
             if isfolder(token):
+                token = self.sanitize_foldername(token)
                 if last_path.endswith('/'):
                     last_path += token
                 else:
