@@ -74,6 +74,7 @@ def main(args):
 
     verbose_lv = args.verbosity if not DEBUG else 3
     verbose_lv = 1 if args.hollywood else verbose_lv
+    verbose_lv = verbose_lv or 1
 
     fsorg = FsorgFile(FILEPATH,
                       verbosity=verbose_lv,
