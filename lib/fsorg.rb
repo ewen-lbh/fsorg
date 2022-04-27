@@ -21,7 +21,6 @@ class Fsorg
     @document = document
     @current_line = 0
     @current_depth = -1
-    @to_write = [] # [ { :path, :content, :permissions } ]
   end
 
   def from_relative_to_root(path)
@@ -47,7 +46,6 @@ class Fsorg
     # TODO process_see
     process_for
     process_if
-    store_writes
     turn_puts_into_runs
     ask_missing_variables
     process_root
@@ -134,7 +132,7 @@ class Fsorg
         filepath = @document_path.parent.join(line.sub /^INCLUDE /, "")
         included_raw = File.new(filepath).read.strip
         included_fsorg = Fsorg.new(@root_directory, @data, included_raw, filepath)
-        included_fsorg.preprocess
+        included_fsorg.preprocess 
         @data = included_fsorg.data.merge @data
         output += included_fsorg.document.lines(chomp: true)
       else
@@ -147,25 +145,7 @@ class Fsorg
 
   def store_writes
     output = []
-    current = {}
-    inside_write_directive = -> { !current.keys.empty? }
-
-    @document.lines(chomp: true).each_with_index do |line, index|
-      @current_line = index + 1
-      if inside_write_directive.()
-        if line.strip == "}"
-          @to_write << current
-          current = {}
-        else
-          current[:content] += line + "\n"
-        end
-      elsif /^WRITE(\s+INTO)?\s+(?<destination>.+?)(?:\s+MODE\s+(?<permissions>.+?))?\s*\{$/.match line.strip
-        current = $~.named_captures.transform_keys(&:to_sym)
-        current[:content] = ""
-      else
-        output << line
-      end
-    end
+    
 
     @document = output.join "\n"
   end
@@ -292,7 +272,7 @@ class Fsorg
   end
 
   def ask_missing_variables
-    (@document + @to_write.map { |f| f[:content] }.join(" ")).scan /\{\{(?<variable>[^}]+?)\}\}/ do |variable|
+    @document.scan /\{\{(?<variable>[^}]+?)\}\}/ do |variable|
       unless @data.include? variable[0].to_sym
         @data[variable[0].to_sym] = :ask
       end
@@ -338,16 +318,12 @@ class Fsorg
     @data[:HERE]
   end
 
-  def execute_writes(dry_run, quiet)
-    @to_write.each do |future_file|
-      do_write future_file, dry_run, quiet
-    end
-  end
-
   def walk(dry_run, quiet, verbose)
     current_path = [@root_directory]
-    current_path_as_pathname = -> { current_path.reduce(Pathname.new "") { |path, fragment| path.join fragment } }
     @data[:HERE] = @root_directory
+    file_to_write = {}
+    inside_write_directive = -> { !file_to_write.keys.empty? }
+    current_path_as_pathname = -> { current_path.reduce(Pathname.new "") { |path, fragment| path.join fragment } }
 
     if verbose
       puts "Data is #{@data.except :HERE}".light_black
@@ -361,7 +337,17 @@ class Fsorg
         line = line.gsub "{{#{key}}}", value.to_s
       end
 
-      if /^(?<leaf>.+?)\s+\{/ =~ line.strip
+      if inside_write_directive.()
+        if line.strip == "}"
+          do_write file_to_write, dry_run, quiet
+          file_to_write = {}
+        else
+          file_to_write[:content] += line + "\n"
+        end
+      elsif /^WRITE(\s+INTO)?\s+(?<destination>.+?)(?:\s+MODE\s+(?<permissions>.+?))?\s*\{$/.match line.strip
+        file_to_write = $~.named_captures.transform_keys(&:to_sym)
+        file_to_write[:content] = ""
+      elsif /^(?<leaf>.+?)\s+\{/ =~ line.strip
         current_path << leaf
         @data[:HERE] = current_path_as_pathname.()
         if verbose
@@ -384,11 +370,6 @@ class Fsorg
         do_run command, current_location, environment, dry_run, quiet, verbose
       end
     end
-
-    @current_depth = 0
-    # TODO do writes alongside other operations
-    puts ("Writing files " + "─" * 40).light_black
-    execute_writes dry_run, quiet
   end
 
   def do_mkpath(path, dry_run, quiet)
@@ -401,14 +382,17 @@ class Fsorg
   end
 
   def do_write(future_file, dry_run, quiet)
-    dest = from_relative_to_root future_file[:destination]
-    do_mkpath dest.parent, dry_run, quiet
+    indentation = "  " * @current_depth
+    dest = from_relative_to_root(current_location) / future_file[:destination]
+    unless dest.parent.relative_path_from(@root_directory).to_s == "."
+      do_mkpath dest.parent, dry_run, quiet
+    end
 
     unless quiet
-      puts "> ".cyan.bold + dest.relative_path_from(@root_directory).to_s + (future_file[:permissions] ? " mode #{future_file[:permissions]}".yellow : "")
+      puts "#{indentation}> ".cyan.bold + dest.relative_path_from(@root_directory).to_s + (future_file[:permissions] ? " mode #{future_file[:permissions]}".yellow : "")
     end
     unless dry_run
-      dest.write replace_data future_file[:content]
+      dest.write deindent replace_data future_file[:content]
       # Not using dest.chmod as the syntax for permissions is more than just integers,
       # and matches in fact the exact syntax of chmod's argument, per the manpage, chmod(1) (line "Each MODE is of the form…")
       `chmod #{future_file[:permissions]} #{dest}` if future_file[:permissions]
