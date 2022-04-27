@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require "docopt"
+require "pathname"
 require "yaml"
 require "fsorg"
 
