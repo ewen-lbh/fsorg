@@ -3,6 +3,7 @@ description: The graphical user interface to ortfo, a simple way to write beauti
 sizes: [16, 32, 48, 64, 128, 256, 512, 1024]
 ---
 
+# TODO use this in PKGBUILDs
 
 ROOT usr
 
@@ -24,7 +25,7 @@ share {
 	icons/hicolor {
 		FOR size IN sizes {
 			{{size}}x{{size}}/apps { 
-				RUN svg2png --width {{size}} --height {{size}} ../public/assets/light-logo.svg ortfo.png
+				RUN svg2png --width {{size}} --height {{size}} $DOCUMENT_DIR/../public/assets/light-logo.svg ortfo.png
 			}
 		}
 	}

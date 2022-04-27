@@ -1,7 +1,33 @@
 #!/usr/bin/env ruby
+require "docopt"
+require "yaml"
 require "fsorg"
 
-fsorg = Fsorg.from_command_line
-fsorg.preprocess
-fsorg.walk
+args = Docopt.docopt <<-DOC
+    Usage:
+        fsorg [options] <filepath>
+        fsorg [options] <data> <filepath>
 
+    Options:
+        -h --help                 Show this screen.
+        -r --root=ROOT_DIRECTORY  Set the root directory.
+        -n --dry-run              Show what would be done, but don't do it.
+        -q --quiet                Don't show actions performed.
+        -v --verbose              Show details about actions performed.
+    
+    Actions performed:
+        Paths are shown relative to the root directory.
+        +                         Create a directory
+        $                         Run a command
+        >                         Write a file
+DOC
+
+filepath = Pathname.new args["<filepath>"]
+document = File.new(filepath).read.strip
+data_raw = args["<data>"] || "{}"
+data = YAML.load data_raw, symbolize_names: true
+root_directory = Pathname.new(args["--root"] || "")
+
+fsorg = Fsorg.new root_directory, data, document, Pathname.new(Dir.pwd).join(filepath)
+fsorg.preprocess
+fsorg.walk args["--dry-run"], args["--quiet"], args["--verbose"]

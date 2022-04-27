@@ -2,7 +2,7 @@ INCLUDE linux.fsorg
 
 ROOT usr/local
 
-DEBIAN/control [
+DEBIAN/control (644) [
 	Package: ortfo
 	Version: {{version}}
 	Maintainer: Ewen Le Bihan

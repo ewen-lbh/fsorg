@@ -1,6 +1,10 @@
-# fsorg
-
-Makes directories from a hierarchy-describing text file
+<center>
+<div align="center">
+  <img src="./branding/logo-color.svg" width=100>
+  <h1>fsorg</h1>
+  <p>A file format to describe and create directory structures</p>
+</div>
+</center>
 
 ## Installation
 
