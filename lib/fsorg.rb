@@ -292,7 +292,7 @@ class Fsorg
   end
 
   def ask_missing_variables
-    @document.scan /\{\{(?<variable>[^}]+?)\}\}/ do |variable|
+    (@document + @to_write.map { |f| f[:content] }.join(" ")).scan /\{\{(?<variable>[^}]+?)\}\}/ do |variable|
       unless @data.include? variable[0].to_sym
         @data[variable[0].to_sym] = :ask
       end
@@ -349,6 +349,10 @@ class Fsorg
     current_path_as_pathname = -> { current_path.reduce(Pathname.new "") { |path, fragment| path.join fragment } }
     @data[:HERE] = @root_directory
 
+    if verbose
+      puts "Data is #{@data.except :HERE}".light_black
+    end
+
     @document.lines(chomp: true).each_with_index do |line, index|
       @current_line = index + 1
       @current_depth = current_path.length - 1
@@ -361,14 +365,14 @@ class Fsorg
         current_path << leaf
         @data[:HERE] = current_path_as_pathname.()
         if verbose
-          puts "currenly #{current_path.map {|fragment| fragment.to_s }.join ' -> '}".light_black
+          puts "currenly #{current_path.map { |fragment| fragment.to_s }.join " -> "}".light_black
         end
         do_mkpath current_location, dry_run, quiet
       elsif line.strip == "}"
         current_path.pop
         @data[:HERE] = current_path_as_pathname.()
         if verbose
-          puts "currenly #{current_path.map {|fragment| fragment.to_s }.join ' -> '}".light_black
+          puts "currenly #{current_path.map { |fragment| fragment.to_s }.join " -> "}".light_black
         end
       elsif /^RUN\s+(?<command>.+?)$/ =~ line.strip
         environment = {
@@ -404,10 +408,17 @@ class Fsorg
       puts "> ".cyan.bold + dest.relative_path_from(@root_directory).to_s + (future_file[:permissions] ? " mode #{future_file[:permissions]}".yellow : "")
     end
     unless dry_run
-      dest.write future_file[:content]
+      dest.write replace_data future_file[:content]
       # Not using dest.chmod as the syntax for permissions is more than just integers,
       # and matches in fact the exact syntax of chmod's argument, per the manpage, chmod(1) (line "Each MODE is of the form…")
       `chmod #{future_file[:permissions]} #{dest}` if future_file[:permissions]
+    end
+  end
+
+  def replace_data(content)
+    content.gsub /\{\{(?<variable>[^}]+?)\}\}/ do |interpolation| 
+      variable = interpolation[2..-3]
+      @data[variable.to_sym] 
     end
   end
 
