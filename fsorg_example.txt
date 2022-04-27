@@ -1,6 +1,6 @@
 # a comment
 
-root:/home/mx3/test
+ROOT /home/mx3/test
 
 Folder {
     Subfolder

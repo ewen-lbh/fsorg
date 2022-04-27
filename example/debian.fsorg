@@ -1,0 +1,11 @@
+INCLUDE linux.fsorg
+
+ROOT usr/local
+
+DEBIAN/control [
+	Package: ortfo
+	Version: {{version}}
+	Maintainer: Ewen Le Bihan
+	Architecture: all
+	Description: {{description}}
+]

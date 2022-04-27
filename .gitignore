@@ -1,12 +1,2 @@
-
-\.idea/
-
-__pycache__/
-
-test\.py
-
-env
-
-dist
-
-fsorg.egg-info
+fsorg-*.gem
+vendor/
