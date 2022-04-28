@@ -132,7 +132,7 @@ class Fsorg
         filepath = @document_path.parent.join(line.sub /^INCLUDE /, "")
         included_raw = File.new(filepath).read.strip
         included_fsorg = Fsorg.new(@root_directory, @data, included_raw, filepath)
-        included_fsorg.preprocess 
+        included_fsorg.preprocess
         @data = included_fsorg.data.merge @data
         output += included_fsorg.document.lines(chomp: true)
       else
@@ -145,7 +145,6 @@ class Fsorg
 
   def store_writes
     output = []
-    
 
     @document = output.join "\n"
   end
@@ -392,7 +391,7 @@ class Fsorg
       puts "#{indentation}> ".cyan.bold + dest.relative_path_from(@root_directory).to_s + (future_file[:permissions] ? " mode #{future_file[:permissions]}".yellow : "")
     end
     unless dry_run
-      dest.write deindent replace_data future_file[:content]
+      dest.write ensure_final_newline deindent replace_data future_file[:content]
       # Not using dest.chmod as the syntax for permissions is more than just integers,
       # and matches in fact the exact syntax of chmod's argument, per the manpage, chmod(1) (line "Each MODE is of the form…")
       `chmod #{future_file[:permissions]} #{dest}` if future_file[:permissions]
@@ -400,9 +399,9 @@ class Fsorg
   end
 
   def replace_data(content)
-    content.gsub /\{\{(?<variable>[^}]+?)\}\}/ do |interpolation| 
+    content.gsub /\{\{(?<variable>[^}]+?)\}\}/ do |interpolation|
       variable = interpolation[2..-3]
-      @data[variable.to_sym] 
+      @data[variable.to_sym]
     end
   end
 
@@ -450,6 +449,14 @@ def deindent(text)
   text.lines(chomp: true).map do |line|
     line.sub pattern, ""
   end.join "\n"
+end
+
+def ensure_final_newline(text)
+  unless text.end_with? "\n"
+    text + "\n"
+  else
+    text
+  end
 end
 
 def capture_output
