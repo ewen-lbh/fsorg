@@ -62,6 +62,7 @@ GEM
       rexml
     kramdown-parser-gfm (1.1.0)
       kramdown (~> 2.0)
+    language_server-protocol (3.17.0.3)
     libyajl2 (2.1.0)
     license_scout (1.2.16)
       ffi-yajl (~> 2.2)
@@ -117,6 +118,7 @@ GEM
       rainbow
       zhexdump (>= 0.0.2)
     plist (3.6.0)
+    prism (0.19.0)
     public_suffix (4.0.7)
     racc (1.6.0)
     rainbow (3.1.1)
@@ -135,7 +137,12 @@ GEM
       unicode-display_width (>= 1.4.0, < 3.0)
     rubocop-ast (1.17.0)
       parser (>= 3.1.1.0)
+    ruby-lsp (0.13.4)
+      language_server-protocol (~> 3.17.0)
+      prism (>= 0.19.0, < 0.20)
+      sorbet-runtime (>= 0.5.10782)
     ruby-progressbar (1.11.0)
+    rufo (0.17.0)
     shellwords (0.1.0)
     solargraph (0.44.3)
       backport (~> 1.2)
@@ -152,6 +159,7 @@ GEM
       thor (~> 1.0)
       tilt (~> 2.0)
       yard (~> 0.9, >= 0.9.24)
+    sorbet-runtime (0.5.11219)
     thor (1.2.1)
     tilt (2.0.10)
     toml-rb (2.1.2)
@@ -177,6 +185,8 @@ PLATFORMS
 DEPENDENCIES
   fsorg!
   omnibus (~> 8.3)
+  ruby-lsp
+  rufo
   solargraph
 
 BUNDLED WITH

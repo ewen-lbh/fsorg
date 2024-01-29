@@ -1,0 +1,26 @@
+Layout/EndAlignment:
+  Enabled: false
+
+Layout/IndentationWidth:
+  Enabled: false
+
+Layout/ElseAlignment:
+  Enabled: false
+
+Layout/HashAlignment:
+  Enabled: false
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/SpecialGlobalVars:
+  EnforcedStyle: use_perl_names
+
+Layout/LineLength:
+  Enabled: false
+
+Style/StringLiteralsInInterpolation:
+  Enabled: false
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyle: consistent_comma
