@@ -376,7 +376,7 @@ class Fsorg # rubocop:disable Metrics/ClassLength,Style/Documentation
 
     return if dry_run
 
-    dest.write ensure_final_newline deindent replace_data future_file[:content]
+    dest.write ensure_final_newline(dedent(replace_data(future_file[:content])))
     # Not using dest.chmod as the syntax for permissions is more than just integers,
     # and matches in fact the exact syntax of chmod's argument, per the manpage, chmod(1) (line "Each MODE is of the form…")
     `chmod #{future_file[:permissions]} #{dest}` if future_file[:permissions]
@@ -419,19 +419,25 @@ class Fsorg # rubocop:disable Metrics/ClassLength,Style/Documentation
   end
 end
 
-def deindent(text) # rubocop:disable Metrics/MethodLength
-  using_tabs = text.lines(chomp: true).any? { |line| /^\t/ =~ line }
-  indenting_with = using_tabs ? "\t" : " "
-  depth = text.lines.map do |line|
-    count = 0
-    count += 1 until line[count] != indenting_with
-    count
-  end.min
-  pattern = /^#{using_tabs ? '\t' : " "}{#{depth}}/
+def dedent(text) # rubocop:disable Metrics/AbcSize,Metrics/CyclomaticComplexity,Metrics/MethodLength,Metrics/PerceivedComplexity
+  lines = text.split "\n"
+  return text if lines.empty?
 
-  text.lines(chomp: true).map do |line|
-    line.sub pattern, ""
-  end.join "\n"
+  indents = lines.map do |line|
+    if line =~ /\S/
+      line.start_with?(" ") ? line.match(/^ +/).offset(0)[1] : 0
+    end
+  end
+  indents.compact!
+  if indents.empty?
+    # No lines had any non-whitespace characters.
+    return ([""] * lines.size).join "\n"
+  end
+
+  min_indent = indents.min
+  return text if min_indent.zero?
+
+  lines.map { |line| line =~ /\S/ ? line.gsub(/^ {#{min_indent}}/, "") : line }.join "\n"
 end
 
 def ensure_final_newline(text)
