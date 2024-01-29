@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = "fsorg"
-  s.version = "0.3.0"
+  s.version = "0.4.0"
   s.summary = "Create directories from a file that describes them"
   s.authors = ["Ewen Le Bihan"]
   s.email = "hey@ewen.works"
