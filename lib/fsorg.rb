@@ -157,7 +157,7 @@ class Fsorg # rubocop:disable Metrics/ClassLength,Style/Documentation
     @document.lines(chomp: true).each_with_index do |line, index|
       @current_line = index + 1
       output << if /^PUT\s+(?<source>.+?)(\s+AS\s+(?<destination>.+?))?(\s+MODE\s+(?<permissions>.+?))?$/.match(line.strip) # rubocop:disable Lint/MixedRegexpCaptureTypes
-        "RUN install -D \"$DOCUMENT_DIR/#{$~[:source]}\" #{($~[:destination] || $~[:source]).shellescape}" + (if $~[:permissions]
+        "RUN install -D \"$FSORG_ROOT/#{$~[:source]}\" #{($~[:destination] || $~[:source]).shellescape}" + (if $~[:permissions]
           " -m #{$~[:permissions].shellescape}"
         else
           ""
